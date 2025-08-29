@@ -148,7 +148,6 @@ with tab1:
             # ALTERAÇÃO AQUI: removido 'step' e adicionado 'format'
             salario = st.number_input(
                 f"Salário Fixo para {vendedor.title()} (R$)", 
-                min_value=0.0,
                 format="%.2f",  # Permite a digitação de centavos
                 key=f"{vendedor}_salario",
                 on_change=atualizar_rendimentos
@@ -157,7 +156,6 @@ with tab1:
             # ALTERAÇÃO AQUI: removido 'step' e adicionado 'format'
             auxilio = st.number_input(
                 f"Auxílio para {vendedor.title()} (R$)", 
-                min_value=0.0,
                 format="%.2f",  # Permite a digitação de centavos
                 key=f"{vendedor}_auxilio",
                 on_change=atualizar_rendimentos
@@ -232,4 +230,5 @@ with tab2:
                 st.info(f"O vendedor '{vendedor_selecionado}' não possui contratos válidos na planilha.")
     else:
         st.info("Aguardando o upload de uma planilha com os contratos na aba 'Upload e Dados'.")
+
 
