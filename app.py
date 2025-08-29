@@ -191,7 +191,9 @@ with tab2:
             
             if not df_vendedor.empty:
                 st.header(f"Resultados para {vendedor_selecionado.title()}")
-                st.markdown(f"**Salário Fixo:** R$ {salario_fixo:,.2f} | **Auxílio:** R$ {auxilio:,.2f} | **Total:** R$ {total_rendimentos_fixos:,.2f}")
+                st.markdown(f"**Salário Fixo:** R$ {salario_fixo:,.2f}")
+                st.markdown(f"**Auxílio:** R$ {auxilio:,.2f}")
+                st.markdown(f"**Total:** R$ {total_rendimentos_fixos:,.2f}")
                 
                 total_contratos_valor = df_vendedor['valor'].sum()
                 
@@ -237,3 +239,4 @@ with tab2:
                 st.info(f"O vendedor '{vendedor_selecionado}' não possui contratos válidos na planilha.")
     else:
         st.info("Aguardando o upload de uma planilha com os contratos na aba 'Upload e Dados'.")
+
