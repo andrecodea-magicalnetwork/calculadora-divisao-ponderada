@@ -76,17 +76,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Função de Callback para atualizar o session_state ---
-def atualizar_rendimentos():
-    for vendedor in st.session_state.get('vendedores_unicos', []):
-        salario_key = f"{vendedor}_salario"
-        auxilio_key = f"{vendedor}_auxilio"
-        
-        if salario_key in st.session_state:
-            st.session_state.rendimentos_fixos[vendedor]['salario_fixo'] = st.session_state[salario_key]
-        if auxilio_key in st.session_state:
-            st.session_state.rendimentos_fixos[vendedor]['auxilio'] = st.session_state[auxilio_key]
-
 
 # Título principal da aplicação
 st.title("Calculadora de Divisão Ponderada")
@@ -100,6 +89,10 @@ with tab1:
     st.header("1. Upload da Planilha de Contratos")
     st.markdown("A planilha deve conter as colunas: `vendedor`, `contrato` e `valor`.")
     uploaded_file = st.file_uploader("Escolha um arquivo Excel (.xlsx) ou CSV (.csv)", type=["xlsx", "csv"])
+
+    # Inicializa o dataframe na sessão
+    if 'df_contratos' not in st.session_state:
+        st.session_state.df_contratos = pd.DataFrame()
 
     if uploaded_file is not None:
         try:
@@ -145,21 +138,24 @@ with tab1:
             st.markdown(f"### {vendedor.title()}")
             st.markdown(f"**Total em Vendas:** R$ {total_vendas:,.2f}")
             
-            # ALTERAÇÃO AQUI: removido 'step' e adicionado 'format'
+            # Aqui está a correção: usando 'value' com o valor do session_state
             salario = st.number_input(
-                f"Salário Fixo para {vendedor.title()} (R$)", 
-                format="%.2f",  # Permite a digitação de centavos
+                f"Salário Fixo para {vendedor.title()} (R$)",
+                value=st.session_state.rendimentos_fixos[vendedor]['salario_fixo'],
+                format="%.2f",
                 key=f"{vendedor}_salario",
-                on_change=atualizar_rendimentos
             )
             
-            # ALTERAÇÃO AQUI: removido 'step' e adicionado 'format'
             auxilio = st.number_input(
-                f"Auxílio para {vendedor.title()} (R$)", 
-                format="%.2f",  # Permite a digitação de centavos
+                f"Auxílio para {vendedor.title()} (R$)",
+                value=st.session_state.rendimentos_fixos[vendedor]['auxilio'],
+                format="%.2f",
                 key=f"{vendedor}_auxilio",
-                on_change=atualizar_rendimentos
             )
+
+            # Atualiza o session_state com os valores digitados
+            st.session_state.rendimentos_fixos[vendedor]['salario_fixo'] = salario
+            st.session_state.rendimentos_fixos[vendedor]['auxilio'] = auxilio
             
             total_fixos = salario + auxilio
             total_geral_calculado = total_vendas + total_fixos
@@ -167,6 +163,7 @@ with tab1:
             st.markdown(f"**Total de Rendimentos Fixos:** R$ {total_fixos:,.2f}")
             st.markdown(f"**Total Geral (Vendas + Fixos):** R$ {total_geral_calculado:,.2f}")
             st.markdown("---")
+
 
 # --- Exibição dos resultados na segunda aba ---
 with tab2:
@@ -230,5 +227,4 @@ with tab2:
                 st.info(f"O vendedor '{vendedor_selecionado}' não possui contratos válidos na planilha.")
     else:
         st.info("Aguardando o upload de uma planilha com os contratos na aba 'Upload e Dados'.")
-
 
