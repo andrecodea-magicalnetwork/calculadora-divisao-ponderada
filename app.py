@@ -96,11 +96,13 @@ with tab1:
 
     if uploaded_file is not None:
         try:
+            # Lendo o arquivo
             if uploaded_file.name.endswith('.csv'):
                 df = pd.read_csv(uploaded_file, sep=';', decimal=',')
             else:
                 df = pd.read_excel(uploaded_file, engine='openpyxl')
 
+            # Normaliza os nomes das colunas
             df.columns = df.columns.str.lower().str.strip().str.replace(' ', '_')
             
             colunas_obrigatorias = ['vendedor', 'contrato', 'valor']
@@ -110,6 +112,7 @@ with tab1:
                 st.session_state.df_contratos = df.dropna(subset=colunas_obrigatorias)
                 st.session_state.df_contratos['valor'] = pd.to_numeric(st.session_state.df_contratos['valor'], errors='coerce')
                 
+                # Exibe a planilha carregada
                 st.subheader("Planilha Carregada")
                 total_contratos = st.session_state.df_contratos.shape[0]
                 vendedores_unicos_list = st.session_state.df_contratos['vendedor'].unique().tolist()
@@ -118,7 +121,7 @@ with tab1:
                 st.dataframe(st.session_state.df_contratos)
 
                 if 'rendimentos_fixos' not in st.session_state:
-                    st.session_state.rendimentos_fixos = {v: {'salario_fixo': 0.0, 'auxilio': 0.0} for v in vendedores_unicos_list}
+                    st.session_state.rendimentos_fixos = {v: {'salario_fixo': "0.0", 'auxilio': "0.0"} for v in vendedores_unicos_list}
 
         except Exception as e:
             st.error(f"Houve um erro ao ler o arquivo. Por favor, verifique se a planilha está no formato correto. Erro: {e}")
@@ -138,32 +141,25 @@ with tab1:
             st.markdown(f"### {vendedor.title()}")
             st.markdown(f"**Total em Vendas:** R$ {total_vendas:,.2f}")
             
-            # Aqui está a correção: usando 'value' com o valor do session_state
-            salario = st.number_input(
-                f"Salário Fixo para {vendedor.title()} (R$)",
-                value=st.session_state.rendimentos_fixos[vendedor]['salario_fixo'],
-                format="%.2f",
-                key=f"{vendedor}_salario",
-            )
+            salario = st.text_input(f"Salário Fixo para {vendedor.title()} (R$)", value=st.session_state.rendimentos_fixos[vendedor]['salario_fixo'], key=f"{vendedor}_salario")
+            auxilio = st.text_input(f"Auxílio para {vendedor.title()} (R$)", value=st.session_state.rendimentos_fixos[vendedor]['auxilio'], key=f"{vendedor}_auxilio")
             
-            auxilio = st.number_input(
-                f"Auxílio para {vendedor.title()} (R$)",
-                value=st.session_state.rendimentos_fixos[vendedor]['auxilio'],
-                format="%.2f",
-                key=f"{vendedor}_auxilio",
-            )
-
-            # Atualiza o session_state com os valores digitados
             st.session_state.rendimentos_fixos[vendedor]['salario_fixo'] = salario
             st.session_state.rendimentos_fixos[vendedor]['auxilio'] = auxilio
             
-            total_fixos = salario + auxilio
+            try:
+                salario_float = float(salario.replace(',', '.') if isinstance(salario, str) else salario)
+                auxilio_float = float(auxilio.replace(',', '.') if isinstance(auxilio, str) else auxilio)
+            except (ValueError, TypeError):
+                salario_float = 0.0
+                auxilio_float = 0.0
+            
+            total_fixos = salario_float + auxilio_float
             total_geral_calculado = total_vendas + total_fixos
             
             st.markdown(f"**Total de Rendimentos Fixos:** R$ {total_fixos:,.2f}")
             st.markdown(f"**Total Geral (Vendas + Fixos):** R$ {total_geral_calculado:,.2f}")
             st.markdown("---")
-
 
 # --- Exibição dos resultados na segunda aba ---
 with tab2:
@@ -177,14 +173,21 @@ with tab2:
         if vendedor_selecionado:
             df_vendedor = st.session_state.df_contratos[st.session_state.df_contratos['vendedor'] == vendedor_selecionado].copy()
             
-            rendimentos = st.session_state.rendimentos_fixos.get(vendedor_selecionado, {'salario_fixo': 0.0, 'auxilio': 0.0})
-            salario_fixo = rendimentos['salario_fixo']
-            auxilio = rendimentos['auxilio']
-            total_rendimentos_fixos = salario_fixo + auxilio
+            salario_string = st.session_state.rendimentos_fixos[vendedor_selecionado]['salario_fixo']
+            auxilio_string = st.session_state.rendimentos_fixos[vendedor_selecionado]['auxilio']
+            
+            try:
+                salario_float = float(salario_string.replace(',', '.') if isinstance(salario_string, str) else salario_string)
+                auxilio_float = float(auxilio_string.replace(',', '.') if isinstance(auxilio_string, str) else auxilio_string)
+            except (ValueError, TypeError):
+                salario_float = 0.0
+                auxilio_float = 0.0
+
+            total_rendimentos_fixos = salario_float + auxilio_float
             
             if not df_vendedor.empty:
                 st.header(f"Resultados para {vendedor_selecionado.title()}")
-                st.markdown(f"**Salário Fixo:** R$ {salario_fixo:,.2f} | **Auxílio:** R$ {auxilio:,.2f} | **Total:** R$ {total_rendimentos_fixos:,.2f}")
+                st.markdown(f"**Salário Fixo:** R$ {salario_float:,.2f} | **Auxílio:** R$ {auxilio_float:,.2f} | **Total:** R$ {total_rendimentos_fixos:,.2f}")
                 
                 total_contratos_valor = df_vendedor['valor'].sum()
                 
@@ -227,4 +230,5 @@ with tab2:
                 st.info(f"O vendedor '{vendedor_selecionado}' não possui contratos válidos na planilha.")
     else:
         st.info("Aguardando o upload de uma planilha com os contratos na aba 'Upload e Dados'.")
+
 
