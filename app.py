@@ -77,13 +77,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Função de Callback para atualizar o session_state ---
-# Esta função é chamada sempre que um campo de número é alterado.
 def atualizar_rendimentos():
     for vendedor in st.session_state.get('vendedores_unicos', []):
         salario_key = f"{vendedor}_salario"
         auxilio_key = f"{vendedor}_auxilio"
         
-        # Atualiza o dicionário principal com os valores dos widgets
         if salario_key in st.session_state:
             st.session_state.rendimentos_fixos[vendedor]['salario_fixo'] = st.session_state[salario_key]
         if auxilio_key in st.session_state:
@@ -126,7 +124,6 @@ with tab1:
                 st.markdown(f"**Total de Contratos:** {total_contratos} | **Vendedores Únicos:** {len(vendedores_unicos_list)}")
                 st.dataframe(st.session_state.df_contratos)
 
-                # Inicializa o dicionário de rendimentos fixos na sessão se for a primeira vez
                 if 'rendimentos_fixos' not in st.session_state:
                     st.session_state.rendimentos_fixos = {v: {'salario_fixo': 0.0, 'auxilio': 0.0} for v in vendedores_unicos_list}
 
@@ -136,7 +133,6 @@ with tab1:
             st.session_state.vendedores_unicos = []
             st.session_state.rendimentos_fixos = {}
 
-    # Se o DataFrame foi carregado, mostra os campos para inserir os rendimentos fixos
     if 'df_contratos' in st.session_state and not st.session_state.df_contratos.empty:
         st.header("2. Insira os Rendimentos Fixos por Vendedor")
         
@@ -149,18 +145,20 @@ with tab1:
             st.markdown(f"### {vendedor.title()}")
             st.markdown(f"**Total em Vendas:** R$ {total_vendas:,.2f}")
             
-            # Usamos as chaves e a função on_change para garantir que o estado seja salvo
+            # ALTERAÇÃO AQUI: removido 'step' e adicionado 'format'
             salario = st.number_input(
                 f"Salário Fixo para {vendedor.title()} (R$)", 
-                min_value=0.0, 
-                step=100.0, 
+                min_value=0.0,
+                format="%.2f",  # Permite a digitação de centavos
                 key=f"{vendedor}_salario",
                 on_change=atualizar_rendimentos
             )
+            
+            # ALTERAÇÃO AQUI: removido 'step' e adicionado 'format'
             auxilio = st.number_input(
                 f"Auxílio para {vendedor.title()} (R$)", 
-                min_value=0.0, 
-                step=10.0, 
+                min_value=0.0,
+                format="%.2f",  # Permite a digitação de centavos
                 key=f"{vendedor}_auxilio",
                 on_change=atualizar_rendimentos
             )
@@ -191,17 +189,13 @@ with tab2:
             
             if not df_vendedor.empty:
                 st.header(f"Resultados para {vendedor_selecionado.title()}")
-                st.markdown(f"**Salário Fixo:** R$ {salario_fixo:,.2f}")
-                st.markdown(f"**Auxílio:** R$ {auxilio:,.2f}")
-                st.markdown(f"**Total:** R$ {total_rendimentos_fixos:,.2f}")
+                st.markdown(f"**Salário Fixo:** R$ {salario_fixo:,.2f} | **Auxílio:** R$ {auxilio:,.2f} | **Total:** R$ {total_rendimentos_fixos:,.2f}")
                 
                 total_contratos_valor = df_vendedor['valor'].sum()
                 
-                # O valor total para ponderação deve ser apenas o total dos contratos
                 if total_contratos_valor > 0:
                     df_resultados = df_vendedor.copy()
                     
-                    # A proporção é baseada no valor de cada contrato sobre o total de contratos do vendedor
                     df_resultados['proporcao_contrato'] = df_resultados['valor'] / total_contratos_valor
                     df_resultados['valor_ponderado'] = df_resultados['proporcao_contrato'] * total_rendimentos_fixos
                     
@@ -225,7 +219,6 @@ with tab2:
                     st.markdown(f"**Verificação:** A soma dos valores ponderados é de **R$ {soma_ponderada:,.2f}**")
                     st.markdown("Esse valor deve ser igual ao total dos rendimentos fixos.")
                     
-                    # Botão de download
                     csv_data = df_resultados_final.to_csv(index=False, sep=';', decimal=',').encode('utf-8')
                     st.download_button(
                         label=f"Baixar Planilha de {vendedor_selecionado.title()} (CSV)",
