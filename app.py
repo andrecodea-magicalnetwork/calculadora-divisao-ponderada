@@ -151,6 +151,7 @@ with tab1:
                 salario_float = float(salario.replace(',', '.') if isinstance(salario, str) else salario)
                 auxilio_float = float(auxilio.replace(',', '.') if isinstance(auxilio, str) else auxilio)
             except (ValueError, TypeError):
+                st.waring("Valor não registrado, digite novamente")
                 salario_float = 0.0
                 auxilio_float = 0.0
             
@@ -230,5 +231,6 @@ with tab2:
                 st.info(f"O vendedor '{vendedor_selecionado}' não possui contratos válidos na planilha.")
     else:
         st.info("Aguardando o upload de uma planilha com os contratos na aba 'Upload e Dados'.")
+
 
 
